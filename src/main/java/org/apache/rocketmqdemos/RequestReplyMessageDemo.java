@@ -48,7 +48,9 @@ public class RequestReplyMessageDemo {
         try {
             Message msg = new Message(TOPIC, "这个是request消息， 快点回复我".getBytes(RemotingHelper.DEFAULT_CHARSET));
             long begin = System.currentTimeMillis();
+
             Message retMsg = producer.request(msg, ttl);
+            
             long cost = System.currentTimeMillis() - begin;
             System.out.printf("\n发送消息到回复花费: %d ms,  回复内容: %s %n", cost, new String(retMsg.getBody()));
         } catch (Exception e) {
