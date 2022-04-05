@@ -104,6 +104,7 @@ public class TransactionMessageDemo {
     }
 
     public static class TransactionListenerImpl implements TransactionListener {
+        // 执行本地事物
         @Override
         public LocalTransactionState executeLocalTransaction(Message msg, Object arg) {
             System.out.printf("[处理本地事物] %s%n%n", new String(msg.getBody()));
@@ -120,7 +121,7 @@ public class TransactionMessageDemo {
             }
         }
 
-        // 消息内容是 "Hello RocketMQ, Check Producer" 的消息会被回查。 然后被消费
+        // 消息回查方法
         @Override
         public LocalTransactionState checkLocalTransaction(MessageExt msg) {
             System.out.printf("[回查本地事物] 消息体：%s %n%n", new String(msg.getBody()));
