@@ -28,13 +28,13 @@ public class OrderMessageDemo2 {
             NAMESRV_ADDR = args[0];
         }
 
-        partitionOrderMessageDemo();
+        globalOrderMessageDemo();
 
         Thread.sleep(100000);
     }
 
-    // 分区有序
-    public static void partitionOrderMessageDemo() throws Exception {
+    // 全局有序
+    public static void globalOrderMessageDemo() throws Exception {
         createOrderlyTopic(1, TOPIC_1_QUEUE);
 
         consume("*", "tiger-consumer-orderly_2_queue");
