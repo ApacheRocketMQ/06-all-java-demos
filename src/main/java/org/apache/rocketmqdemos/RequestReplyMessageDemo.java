@@ -19,7 +19,7 @@ import java.util.List;
 public class RequestReplyMessageDemo {
     public static String NAMESRV_ADDR = "127.0.0.1:9876";
     public static String TOPIC = "tiger_request_topic_01";
-    public static String PRODUCER_GROUP_NAME = "tiger_producer_group_" + System.currentTimeMillis();
+    public static String PRODUCER_GROUP_NAME = "tiger_producer_group_request";
 
     public static void main(String args[]) throws MQClientException, InterruptedException {
         if (args != null && args.length > 0) {
@@ -28,15 +28,13 @@ public class RequestReplyMessageDemo {
 
         new Thread(() -> {
             try {
-                requestProeucer();
-            } catch (MQClientException e) {
+                responseConsumer();
+            } catch (MQClientException | InterruptedException e) {
                 e.printStackTrace();
             }
         }).start();
 
-        responseConsumer();
-
-        Thread.sleep(10000);
+        requestProeucer();
     }
 
     public static void requestProeucer() throws MQClientException {
@@ -56,15 +54,11 @@ public class RequestReplyMessageDemo {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         producer.shutdown();
     }
 
-    public static void responseConsumer() throws MQClientException {
-        DefaultMQProducer replyProducer = new DefaultMQProducer(PRODUCER_GROUP_NAME);
-        replyProducer.setNamesrvAddr(NAMESRV_ADDR);
-        replyProducer.start();
-
-
+    public static void responseConsumer() throws MQClientException, InterruptedException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("tiger-consumer-group_05");
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
         consumer.setNamesrvAddr(NAMESRV_ADDR);
@@ -81,9 +75,15 @@ public class RequestReplyMessageDemo {
                         String replyTo = MessageUtil.getReplyToClient(msg);
                         byte[] replyContent = "我收到了la".getBytes();
                         Message replyMessage = MessageUtil.createReplyMessage(msg, replyContent);
+
+                        DefaultMQProducer replyProducer = new DefaultMQProducer("tiger_producer_group_reply_01");
+                        replyProducer.setNamesrvAddr(NAMESRV_ADDR);
+                        replyProducer.start();
+
                         SendResult replyResult = replyProducer.send(replyMessage, 10000);
 
                         System.out.printf("reply to %s , %s %n", replyTo, replyResult.toString());
+                        replyProducer.shutdown();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -94,6 +94,7 @@ public class RequestReplyMessageDemo {
 
 
         consumer.start();
-        System.out.printf("Consumer Started.%n");
+
+        Thread.sleep(999999);
     }
 }
