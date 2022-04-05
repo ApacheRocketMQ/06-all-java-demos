@@ -36,8 +36,6 @@ public class TransactionMessageDemo {
             CONSUMER_GROUP = args[2];
         }
 
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, NAME_SRV_ADDR);
-
         sendMessages();
 
     }
@@ -48,6 +46,7 @@ public class TransactionMessageDemo {
      */
     public static void sendMessages() throws Exception {
         TransactionMQProducer producer = new TransactionMQProducer("producer_group");
+        producer.setNamesrvAddr(NAME_SRV_ADDR);
         producer.setExecutorService(new ThreadPoolExecutor(1, 1, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -60,23 +59,20 @@ public class TransactionMessageDemo {
         producer.start();
 
         //发送直接可以被消费的消息
-        Message msg1 = new Message(TOPIC, ("1. 本地事物会成功， 第一个被消费者消费").getBytes(RemotingHelper.DEFAULT_CHARSET));
-        producer.sendMessageInTransaction(msg1, 1);
-
+        Message msg1 = new Message(TOPIC, ("0. 本地事物处理状态未知，通过回查发现本地事物成功，被消费者消费").getBytes(RemotingHelper.DEFAULT_CHARSET));
+        producer.sendMessageInTransaction(msg1, 0);
         System.out.println("发送第1个half消息完成");
 
 
         //发送需要回查的消息
-        Message msg = new Message(TOPIC, ("2. 本地事物会失败， 回查后本地事物成功， 第二个被消费者消费").getBytes(RemotingHelper.DEFAULT_CHARSET));
-        producer.sendMessageInTransaction(msg, 0);
-
+        Message msg = new Message(TOPIC, ("1. 本地事物成功， 不用回查， 被消费者消费").getBytes(RemotingHelper.DEFAULT_CHARSET));
+        producer.sendMessageInTransaction(msg, 1);
         System.out.println("发送第2个half消息完成");
 
 
         //发送本地事物执行失败， 需要回滚的消息。 这个消息消费者永远看不到
-        Message msg2 = new Message(TOPIC, ("3. 本地事物执行的结果是回滚这个half消息， 消费者永远不会消费").getBytes(RemotingHelper.DEFAULT_CHARSET));
+        Message msg2 = new Message(TOPIC, ("2. 本地事物失败，回滚half消息， 消费者永远不会消费").getBytes(RemotingHelper.DEFAULT_CHARSET));
         producer.sendMessageInTransaction(msg2, 2);
-
         System.out.printf("发送第3个half消息完成", new String(msg2.getBody()));
 
         consume();
@@ -120,7 +116,7 @@ public class TransactionMessageDemo {
                 case 2:
                     return LocalTransactionState.ROLLBACK_MESSAGE; // 消费者不会消费这个消息
                 default:
-                    return LocalTransactionState.COMMIT_MESSAGE;
+                    return LocalTransactionState.ROLLBACK_MESSAGE;
             }
         }
 
@@ -128,7 +124,6 @@ public class TransactionMessageDemo {
         @Override
         public LocalTransactionState checkLocalTransaction(MessageExt msg) {
             System.out.printf("[回查本地事物] 消息体：%s %n%n", new String(msg.getBody()));
-
             return LocalTransactionState.COMMIT_MESSAGE;
         }
     }

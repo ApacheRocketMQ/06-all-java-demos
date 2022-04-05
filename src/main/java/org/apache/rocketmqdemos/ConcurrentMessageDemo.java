@@ -33,6 +33,7 @@ public class ConcurrentMessageDemo {
         producer.start();
 
         startOneConsumer();
+        
         for (int i = 1; i <= 10; i++) { // 模拟并发发送消息
             int finalI = i;
             new Thread(() -> {
@@ -46,6 +47,13 @@ public class ConcurrentMessageDemo {
         }
 
         Thread.sleep(9999999);
+    }
+
+    // 启动一个生产者实例， 并且生产10条消息
+    public static void startOneProducer(int producerIndex) throws InterruptedException, MQClientException, MQBrokerException, RemotingException, UnsupportedEncodingException {
+        Message msg = new Message(TOPIC_NAME, ("Hello RocketMQ by producer " + producerIndex).getBytes(RemotingHelper.DEFAULT_CHARSET));
+        SendResult res = producer.send(msg);
+        System.out.printf("生产者编号：%d 消息发送成功, 消息id=%s\n", producerIndex, res.getMsgId());
     }
 
     public static void startOneConsumer() throws MQClientException {
@@ -67,10 +75,5 @@ public class ConcurrentMessageDemo {
         System.out.printf("Consumer Started.\n");
     }
 
-    // 启动一个生产者实例， 并且生产10条消息
-    public static void startOneProducer(int producerIndex) throws InterruptedException, MQClientException, MQBrokerException, RemotingException, UnsupportedEncodingException {
-        Message msg = new Message(TOPIC_NAME, ("Hello RocketMQ by producer " + producerIndex).getBytes(RemotingHelper.DEFAULT_CHARSET));
-        SendResult res = producer.send(msg);
-        System.out.printf("生产者编号：%d 消息发送成功, 消息id=%s\n", producerIndex, res.getMsgId());
-    }
+
 }

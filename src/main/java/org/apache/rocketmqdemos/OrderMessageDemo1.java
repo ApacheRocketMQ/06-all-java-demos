@@ -64,6 +64,7 @@ public class OrderMessageDemo1 {
         consumer.setNamesrvAddr(NAMESRV_ADDR);
         consumer.subscribe(TOPIC_2_QUEUE, tags);
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+
         consumer.registerMessageListener(new MessageListenerOrderly() {
 
             @Override
